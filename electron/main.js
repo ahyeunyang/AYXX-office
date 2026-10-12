@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -9,8 +9,9 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
     height: 900,
+    frame: false,
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
     },
   });
@@ -20,6 +21,13 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  ipcMain.on("window-control", (event, action) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win || event.senderFrame !== win.webContents.mainFrame) return;
+    if (action === "close") win.close();
+    if (action === "minimize") win.minimize();
+    if (action === "fullscreen") win.setFullScreen(!win.isFullScreen());
+  });
   createWindow();
 
   app.on("activate", () => {

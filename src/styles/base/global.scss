@@ -1,0 +1,12 @@
+﻿@use './reset';
+@use '../tokens';
+
+body { min-width: 25.714286rem; }
+
+button { cursor: pointer; color: inherit; touch-action: manipulation; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 0.142857rem solid #667e60; outline-offset: 0.214286rem; }
+
+.icon-placeholder { display: inline-block; width: 1.142857rem; height: 1.142857rem; flex-shrink: 0; border: 0.071429rem solid currentColor; border-radius: 0.214286rem; opacity: .55; }
+
+
+

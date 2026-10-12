@@ -1,4 +1,4 @@
-# AYXX Office
+﻿# AYXX Office
 
 AYXX Office는 React, TypeScript, Vite, Electron으로 만든 설치형 데스크톱 앱 프로젝트입니다.
 
@@ -16,21 +16,21 @@ npm run dev:electron
 - Electron 기반 데스크톱 앱 실행 환경 구성
 - React + TypeScript + Vite 프로젝트 기본 구조 세팅
 - SCSS 기반 스타일 시스템 적용
-- 페이지/컴포넌트/스타일/이미지 자원 분리 구조 정리
-- 디자인 토큰 기반 색상, 간격, 반경, 그림자 관리
+- 공통 사이드바와 페이지별 스타일 분리
+- 디자인 토큰 기반 색상, 글꼴, 반경 관리
+- 공지사항 목록·검색·분류·작성·수정·삭제·상단 고정 (기기 내 저장)
 
 ## 프로젝트 구조
 
 - src/App.tsx: 앱 진입점
-- src/pages/HomePage.tsx: 홈 페이지 컴포넌트
-- src/components/HeroCard.tsx: 공통 UI 컴포넌트
-- src/styles/pages/HomePage.scss: 페이지별 SCSS
-- src/styles/tokens/\_colors.scss: 색상 토큰
-- src/styles/tokens/\_tokens.scss: 간격/반경/그림자 토큰
-- src/styles/base/\_mixins.scss: 공통 믹스인
-- src/assets/images: 이미지 자원 폴더
+- src/pages/NoticesPage.tsx: 공지사항 페이지
+- src/styles/pages/NoticesPage.scss: 공지사항 SCSS
+- src/styles/\_tokens.scss: 공통 디자인 토큰
+- src/styles/layout/AppLayout.scss: 공통 레이아웃 스타일
+- src/styles/base/global.scss: 전역 스타일
+- src/assets: 이미지 자원 폴더
 - electron/main.js: Electron 메인 프로세스
-- electron/preload.js: Electron preload 스크립트
+- electron/preload.cjs: Electron preload 스크립트
 
 ## 개발 방향
 
@@ -42,3 +42,10 @@ npm run dev:electron
 ## 참고 문서
 
 - 프로젝트 계획서: PROJECT_PLAN.md
+
+
+
+## 스타일 단위
+
+기준 글자 크기는 `src/styles/base/_reset.scss`에서만 px로 정의합니다.
+나머지 스타일 길이는 rem으로 작성하며, 현재 기준은 1rem = 14px입니다.
