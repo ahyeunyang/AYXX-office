@@ -1,5 +1,7 @@
-﻿import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import { Modal } from '../components/Modal'
+import { Icon } from '../components/Icon'
 import '../styles/pages/NoticesPage.scss'
 
 type Category = '일반' | '인사' | '업무' | '시스템'
@@ -21,7 +23,12 @@ function loadNotices(): Notice[] {
   } catch { /* 저장 공간에 접근할 수 없어도 페이지를 열 수 있습니다. */ }
   return examples
 }
-export function NoticesPage() {
+type NoticesPageProps = {
+  onCreated: (notice: { id: string; title: string; body: string }) => void
+  notificationTarget: { id: string; serial: number } | null
+  onTargetHandled: () => void
+}
+export function NoticesPage({ onCreated, notificationTarget, onTargetHandled }: NoticesPageProps) {
   const [notices, setNotices] = useState(loadNotices)
   const [filter, setFilter] = useState<Category | '전체'>('전체')
   const [query, setQuery] = useState('')
@@ -30,17 +37,20 @@ export function NoticesPage() {
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const dialog = useRef<HTMLDialogElement>(null)
-  const open = selected !== null || editing !== null
   useEffect(() => {
-    if (open && !dialog.current?.open) dialog.current?.showModal()
-    if (!open && dialog.current?.open) dialog.current?.close()
-  }, [open])
+    if (!notificationTarget) return;
+    const notice = notices.find(item => item.id === notificationTarget.id);
+    if (notice) { setSelected(notice); setEditing(null); setConfirmDelete(false); }
+    onTargetHandled();
+  }, [notificationTarget, notices, onTargetHandled]);
+  const open = selected !== null || editing !== null
   function close() { setSelected(null); setEditing(null); setConfirmDelete(false); setFormError('') }
   function persist(next: Notice[]) {
-    try { localStorage.setItem(storageKey, JSON.stringify(next)); setError('') }
+    let saved = false
+    try { localStorage.setItem(storageKey, JSON.stringify(next)); setError(''); saved = true }
     catch { setError('저장 공간에 접근할 수 없어 변경 내용은 앱을 닫으면 사라집니다.') }
     setNotices(next)
+    return saved
   }
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -50,7 +60,8 @@ export function NoticesPage() {
     if (!title || !body) { setFormError('제목과 내용을 입력해 주세요.'); return }
     const original = editing !== 'new' ? editing : null
     const notice: Notice = { id: original?.id ?? crypto.randomUUID(), title, body, category: data.get('category') as Category, pinned: data.get('pinned') === 'on', author: original?.author ?? 'AYXX 사용자', date: original?.date ?? new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(new Date()) }
-    persist(original ? notices.map(item => item.id === original.id ? notice : item) : [notice, ...notices])
+    const saved = persist(original ? notices.map(item => item.id === original.id ? notice : item) : [notice, ...notices])
+    if (saved && !original) onCreated({ id: notice.id, title: notice.title, body: notice.body })
     close()
   }
   const visible = notices.filter(item => (filter === '전체' || item.category === filter) && `${item.title} ${item.body}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())).sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.date.localeCompare(a.date))
@@ -60,13 +71,13 @@ export function NoticesPage() {
     <div className="notice-toolbar"><div className="category-tabs" aria-label="공지 분류">{(['전체', ...categories] as const).map(category => <button key={category} aria-pressed={filter === category} className={filter === category ? 'selected' : ''} onClick={() => setFilter(category)}>{category}{category === '전체' && <span>{notices.length}</span>}</button>)}</div><label className="search-input"><span className="icon-placeholder" aria-hidden="true" /><input type="search" placeholder="공지 검색" aria-label="공지 제목 및 내용 검색" value={query} onChange={event => setQuery(event.target.value)} /></label></div>
     {error && <p className="feedback" role="status">{error}</p>}
     <div className="list-caption"><span>총 <strong>{visible.length}</strong>개의 공지</span><span>최근 등록순 · 중요 공지 우선</span></div>
-    <div className="notice-list">{visible.map(item => <button className={`notice-row ${item.pinned ? 'pinned' : ''}`} key={item.id} onClick={() => { setSelected(item); setConfirmDelete(false) }}><span className={`category-badge category-${item.category}`}>{item.category}</span><span className="notice-text"><span className="notice-title">{item.pinned && <span className="pin-label">중요</span>}{item.title}</span><span className="notice-excerpt">{item.body.split('\n')[0]}</span></span><span className="notice-meta"><span>{item.author}</span><time dateTime={item.date}>{item.date.replaceAll('-', '.')}</time></span><span className="row-arrow icon-placeholder" aria-hidden="true" /></button>)}{visible.length === 0 && <div className="empty-state"><h2>{query ? '검색 결과가 없습니다' : '아직 등록된 공지가 없습니다'}</h2><p>{query ? '다른 검색어나 분류를 선택해 보세요.' : '첫 번째 소식을 공유해 보세요.'}</p></div>}</div>
+    <div className="notice-list">{visible.map(item => <button className={`notice-row ${item.pinned ? 'pinned' : ''}`} key={item.id} onClick={() => { setSelected(item); setConfirmDelete(false) }}><span className={`category-badge category-${item.category}`}>{item.category}</span><span className="notice-text"><span className="notice-title">{item.pinned && <span className="pin-label">중요</span>}{item.title}</span><span className="notice-excerpt">{item.body.split('\n')[0]}</span></span><span className="notice-meta"><span>{item.author}</span><time dateTime={item.date}>{item.date.replaceAll('-', '.')}</time></span><Icon name="chevron-right" className="row-arrow" /></button>)}{visible.length === 0 && <div className="empty-state"><h2>{query ? '검색 결과가 없습니다' : '아직 등록된 공지가 없습니다'}</h2><p>{query ? '다른 검색어나 분류를 선택해 보세요.' : '첫 번째 소식을 공유해 보세요.'}</p></div>}</div>
     <p className="page-footnote">현재는 예시 공지와 이 기기에 저장된 공지를 표시합니다.</p>
-    <dialog ref={dialog} className="notice-dialog" onCancel={close} aria-labelledby="notice-dialog-title">
-      <div className="dialog-surface"><button className="dialog-close" aria-label="닫기" title="닫기" onClick={close}><span className="icon-placeholder" aria-hidden="true" /></button>
+    <Modal open={open} onClose={close} size="m" title={editing ? (editing === 'new' ? '새 공지 작성' : '공지 수정') : '공지 상세'}>
+      <div className="dialog-surface">
         {editing ? <form onSubmit={save} key={editing === 'new' ? 'new' : editing.id}><span className="kicker">TEAM UPDATES</span><h2 id="notice-dialog-title">{editing === 'new' ? '새 공지 작성' : '공지 수정'}</h2><label>제목<input name="title" required maxLength={120} placeholder="어떤 소식을 전할까요?" defaultValue={editing === 'new' ? '' : editing.title} /></label><label>분류<select name="category" defaultValue={editing === 'new' ? '일반' : editing.category}>{categories.map(category => <option key={category}>{category}</option>)}</select></label><label>내용<textarea name="body" required rows={8} maxLength={10000} placeholder="팀원들에게 전할 내용을 작성해 주세요." defaultValue={editing === 'new' ? '' : editing.body} /></label><label className="checkbox-label"><input type="checkbox" name="pinned" defaultChecked={editing === 'new' ? false : editing.pinned} />중요 공지로 상단에 고정</label>{formError && <p role="alert" className="feedback">{formError}</p>}<div className="dialog-actions"><button type="button" className="button" onClick={close}>취소</button><button className="button primary" type="submit">{editing === 'new' ? '공지 등록' : '변경 저장'}</button></div></form> : selected && <><span className="category-badge">{selected.category}</span><h2 id="notice-dialog-title">{selected.title}</h2><p className="detail-meta">{selected.author} · {selected.date.replaceAll('-', '.')} {selected.pinned && '· 중요 공지'}</p><div className="notice-body">{selected.body}</div><div className="dialog-actions">{confirmDelete ? <><span className="delete-question">이 공지를 삭제할까요?</span><button className="button" onClick={() => setConfirmDelete(false)}>취소</button><button className="button danger" onClick={() => { persist(notices.filter(item => item.id !== selected.id)); close() }}>삭제 확인</button></> : <><button className="button danger" onClick={() => setConfirmDelete(true)}>삭제</button><button className="button" onClick={() => { setEditing(selected); setSelected(null) }}>수정</button><button className="button primary" onClick={close}>닫기</button></>}</div></>}
       </div>
-    </dialog>
+    </Modal>
   </section>
 }
 

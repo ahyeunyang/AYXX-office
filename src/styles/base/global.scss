@@ -1,12 +1,20 @@
 ﻿@use './reset';
+@use './fonts';
 @use '../tokens';
 
-body { min-width: 25.714286rem; }
+html, body, #root { height: 100%; overflow: hidden; }
+#root { display: flex; flex-direction: column; height: 100dvh; }
+body { min-width: var(--space-360); }
 
 button { cursor: pointer; color: inherit; touch-action: manipulation; }
-button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 0.142857rem solid #667e60; outline-offset: 0.214286rem; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: var(--space-2) solid var(--color-focus); outline-offset: var(--space-3); }
 
-.icon-placeholder { display: inline-block; width: 1.142857rem; height: 1.142857rem; flex-shrink: 0; border: 0.071429rem solid currentColor; border-radius: 0.214286rem; opacity: .55; }
+.icon { display: inline-block; width: var(--space-13); height: var(--space-13); flex-shrink: 0; background-color: currentColor; mask-repeat: no-repeat; mask-position: center; mask-size: contain; }
+.icon-placeholder { display: inline-block; width: var(--space-16); height: var(--space-16); flex-shrink: 0; border: var(--space-1) solid currentColor; border-radius: var(--space-3); opacity: .55; }
 
 
 
+
+body { font-size: var(--font-md); font-weight: var(--font-weight-regular); }
+h1, h2, h3 { font-weight: var(--font-weight-regular); }
+strong, b { font-weight: var(--font-weight-medium); }
